@@ -144,6 +144,7 @@ public class Classify extends AppCompatActivity {
             public void onClick(View view) {
                 Intent i = new Intent(Classify.this, MainActivity.class);
                 startActivity(i);
+                finish();
             }
         });
 
