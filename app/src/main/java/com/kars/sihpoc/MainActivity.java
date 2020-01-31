@@ -45,6 +45,12 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+
 //Todo Location still not stable
 public class MainActivity extends AppCompatActivity implements LocationListener {
     private Button btnIdentify;
@@ -56,6 +62,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     public static FusedLocationProviderClient locationProviderClient;
     protected LocationManager locationManager;
     private String filePath = null;
+    private String BaseUrl = "https://api.openweathermap.org/";
+    private boolean showWeather = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -215,7 +223,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 if (location != null) {
                     double lat = location.getLatitude();
                     double longitude = location.getLongitude();
-                    txtWeatherLocation.setText("Latitude:" + location.getLatitude() + ", Longitude:" + location.getLongitude());
+                    getCurrentData(lat, longitude);
+//                    txtWeatherLocation.setText("Latitude:" + location.getLatitude() + ", Longitude:" + location.getLongitude());
                     Log.e("Location", "Latitude : " + lat + "\nLongitude : " + longitude);
                 } else {
                     Log.e("LOCATION", "location is null");
@@ -242,7 +251,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     @Override
     public void onLocationChanged(Location location) {
-        txtWeatherLocation.setText("Latitude:" + location.getLatitude() + ", Longitude:" + location.getLongitude());
+
     }
 
     @Override
@@ -258,5 +267,49 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
         Log.d("Latitude", "status");
+    }
+
+    void getCurrentData(Double lat, Double lon) {
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(BaseUrl)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+        WeatherService service = retrofit.create(WeatherService.class);
+        Call<WeatherResponse> call = service.getCurrentWeatherData(lat.toString(), lon.toString(), getResources().getString(R.string.owa_id), "metric");
+        call.enqueue(new Callback<WeatherResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<WeatherResponse> call, @NonNull Response<WeatherResponse> response) {
+                if (response.code() == 200) {
+                    WeatherResponse weatherResponse = response.body();
+                    assert weatherResponse != null;
+
+                    String stringBuilder = "Country: " +
+                            weatherResponse.sys.country +
+                            "\n" +
+                            "Temperature: " +
+                            weatherResponse.main.temp +
+                            "\n" +
+                            "Temperature(Min): " +
+                            weatherResponse.main.temp_min +
+                            "\n" +
+                            "Temperature(Max): " +
+                            weatherResponse.main.temp_max +
+                            "\n" +
+                            "Humidity: " +
+                            weatherResponse.main.humidity +
+                            "\n" +
+                            "Pressure: " +
+                            weatherResponse.main.pressure;
+
+                    txtWeatherLocation.setText(stringBuilder);
+                }
+                Log.d("API-RESPONSE", response.body().toString());
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<WeatherResponse> call, @NonNull Throwable t) {
+                txtWeatherLocation.setText(t.getMessage());
+            }
+        });
     }
 }
