@@ -11,6 +11,8 @@ import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -22,6 +24,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
@@ -37,6 +40,11 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.theartofdev.edmodo.cropper.CropImage;
 import com.theartofdev.edmodo.cropper.CropImageView;
 
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 //Todo Location still not stable
 public class MainActivity extends AppCompatActivity implements LocationListener {
     private Button btnIdentify;
@@ -47,7 +55,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     private TextView txtWeatherLocation;
     public static FusedLocationProviderClient locationProviderClient;
     protected LocationManager locationManager;
-    protected LocationListener locationListener;
+    private String filePath = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,11 +117,25 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     // opens camera for user
     private void openCameraIntent() {
-        CropImage.activity()
-                .setGuidelines(CropImageView.Guidelines.ON)
-                .setAspectRatio(1, 1)
-                .setCropShape(CropImageView.CropShape.RECTANGLE)
-                .start(this);
+        File photoFile = null;
+        try {
+            photoFile = createImageFile();
+        } catch (IOException ex) {
+            Log.e("EXCEPTION", ex.toString());
+        }
+        // Continue only if the File was successfully created
+        if (photoFile != null) {
+            Uri photoURI = FileProvider.getUriForFile(this,
+                    "com.kars.sihpoc.fileprovider",
+                    photoFile);
+            CropImage.activity()
+                    .setGuidelines(CropImageView.Guidelines.ON)
+                    .setAspectRatio(1, 1)
+                    .setCropShape(CropImageView.CropShape.RECTANGLE)
+                    .start(this);
+        }
+
+
     }
 
     @Override
@@ -127,6 +149,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 Intent intent = new Intent(this, Classify.class);
                 intent.putExtra("resID_uri", uriCroppedImage);
                 intent.putExtra("chosen", "model.tflite");
+                intent.putExtra("file-path", filePath);
                 startActivity(intent);
             } else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
                 Exception error = result.getError();
@@ -199,6 +222,22 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 }
             }
         });
+    }
+
+    private File createImageFile() throws IOException {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File image = File.createTempFile(
+                imageFileName,  /* prefix */
+                ".jpg",         /* suffix */
+                storageDir      /* directory */
+        );
+
+        // Save a file: path for use with ACTION_VIEW intents
+        filePath = image.getAbsolutePath();
+        return image;
     }
 
     @Override
