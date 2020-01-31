@@ -1,11 +1,9 @@
 package com.kars.sihpoc;
 
 import android.Manifest;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
-import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
@@ -13,7 +11,6 @@ import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -37,9 +34,9 @@ import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.soundcloud.android.crop.Crop;
+import com.theartofdev.edmodo.cropper.CropImage;
+import com.theartofdev.edmodo.cropper.CropImageView;
 
-import java.io.File;
 //Todo Location still not stable
 public class MainActivity extends AppCompatActivity implements LocationListener {
     private Button btnIdentify;
@@ -112,42 +109,29 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     // opens camera for user
     private void openCameraIntent() {
-        ContentValues values = new ContentValues();
-        values.put(MediaStore.Images.Media.TITLE, "New Picture");
-        values.put(MediaStore.Images.Media.DESCRIPTION, "From your Camera");
-        // tell camera where to store the resulting picture
-        imageURI = getContentResolver().insert(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        intent.putExtra(MediaStore.EXTRA_OUTPUT, imageURI);
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        // start camera, and wait for it to finish
-        startActivityForResult(intent, REQUEST_CAMERA);
+        CropImage.activity()
+                .setGuidelines(CropImageView.Guidelines.ON)
+                .setAspectRatio(1, 1)
+                .setCropShape(CropImageView.CropShape.RECTANGLE)
+                .start(this);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         // if the camera activity is finished, obtained the uri, crop it to make it square, and send it to 'Classify' activity
-        if (requestCode == REQUEST_CAMERA && resultCode == RESULT_OK) {
-            try {
-                Uri source_uri = imageURI;
-                Uri dest_uri = Uri.fromFile(new File(getCacheDir(), "cropped"));
-                // need to crop it to square image as CNN's always required square input
-                Crop.of(source_uri, dest_uri).asSquare().start(MainActivity.this);
-            } catch (Exception e) {
-                e.printStackTrace();
+        if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
+            CropImage.ActivityResult result = CropImage.getActivityResult(data);
+            if (resultCode == RESULT_OK && result != null) {
+                Uri uriCroppedImage = result.getUri();
+                Intent intent = new Intent(this, Classify.class);
+                intent.putExtra("resID_uri", uriCroppedImage);
+                intent.putExtra("chosen", "model.tflite");
+                startActivity(intent);
+            } else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
+                Exception error = result.getError();
+                Log.e("CROP", "onActivityResult: ", error);
             }
-        }
-        // if cropping acitivty is finished, get the resulting cropped image uri and send it to 'Classify' activity
-        else if (requestCode == Crop.REQUEST_CROP && resultCode == RESULT_OK) {
-            imageURI = Crop.getOutput(data);
-            Intent i = new Intent(MainActivity.this, Classify.class);
-            // put image data in extras to send
-            i.putExtra("resID_uri", imageURI);
-            // put filename in extras
-            i.putExtra("chosen", "model.tflite");
-            startActivity(i);
         } else if (requestCode == REQUEST_CHECK_SETTINGS && resultCode == RESULT_OK)
             showLocation();
     }
@@ -200,16 +184,17 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             }
         });
     }
-    private void showLocation(){
+
+    private void showLocation() {
         locationProviderClient.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
             @Override
             public void onSuccess(Location location) {
-                if(location!=null){
+                if (location != null) {
                     double lat = location.getLatitude();
                     double longitude = location.getLongitude();
                     txtWeatherLocation.setText("Latitude:" + location.getLatitude() + ", Longitude:" + location.getLongitude());
-                    Log.e("Location","Latitude : " + lat + "\nLongitude : " + longitude);
-                }else{
+                    Log.e("Location", "Latitude : " + lat + "\nLongitude : " + longitude);
+                } else {
                     Log.e("LOCATION", "location is null");
                 }
             }
@@ -223,16 +208,16 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     @Override
     public void onProviderDisabled(String provider) {
-        Log.d("Latitude","disable");
+        Log.d("Latitude", "disable");
     }
 
     @Override
     public void onProviderEnabled(String provider) {
-        Log.d("Latitude","enable");
+        Log.d("Latitude", "enable");
     }
 
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
-        Log.d("Latitude","status");
+        Log.d("Latitude", "status");
     }
 }
