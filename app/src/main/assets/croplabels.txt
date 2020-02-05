@@ -1,3 +1,9 @@
-bajra
-jowar
-wheat
+Cotton
+Maize
+Millet
+Mustard
+Rice
+Sugarcane
+Tomato
+Wheat
+Capsicum

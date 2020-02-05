@@ -63,9 +63,9 @@ public class Classify extends AppCompatActivity {
     private String chosen;
 
     // input image dimensions for the Inception Model
-    private int DIM_IMG_SIZE_X = 150;
-    private int DIM_IMG_SIZE_Y = 150;
-    private int DIM_PIXEL_SIZE = 3;
+    private int DIM_IMG_SIZE_X = 4;
+    private int DIM_IMG_SIZE_Y = 4;
+    private int DIM_PIXEL_SIZE = 512;
 
     // int array to hold image data
     private int[] intValues;
