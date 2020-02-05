@@ -12,16 +12,18 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
@@ -37,6 +39,7 @@ import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.squareup.picasso.Picasso;
 import com.theartofdev.edmodo.cropper.CropImage;
 import com.theartofdev.edmodo.cropper.CropImageView;
 
@@ -53,12 +56,12 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 //Todo Location still not stable
 public class MainActivity extends AppCompatActivity implements LocationListener {
-    private Button btnIdentify;
+    private CardView cardCropIdentify, cardDiseaseIdentify, cardWeather;
+    private TextView txtNoGPS;
+    private ProgressBar progressWeather;
+    private LinearLayout llWeather;
     private static final int REQUEST_CAMERA = 101, REQUEST_STORAGE_PERMISSION = 102,
             REQUEST_LOCATION_PERMISSION = 103, REQUEST_CHECK_SETTINGS = 104;
-    private String imgPath = null;
-    private Uri imageURI;
-    private TextView txtWeatherLocation;
     public static FusedLocationProviderClient locationProviderClient;
     protected LocationManager locationManager;
     private String filePath = null;
@@ -69,10 +72,20 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        btnIdentify = findViewById(R.id.btnIdentify);
-        txtWeatherLocation = findViewById(R.id.txtWeatherLocation);
+        cardCropIdentify = (CardView) findViewById(R.id.cardIdentifyCrop);
+        cardDiseaseIdentify = (CardView) findViewById(R.id.cardCropDisease);
+        cardWeather = (CardView) findViewById(R.id.cardWeather);
+        progressWeather = (ProgressBar) findViewById(R.id.progress_weather);
+        txtNoGPS = (TextView) findViewById(R.id.txtNoGps);
+        llWeather = (LinearLayout) findViewById(R.id.llWeather);
+        txtNoGPS.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                requestLocationPermission();
+            }
+        });
         requestLocationPermission();
-        btnIdentify.setOnClickListener(new View.OnClickListener() {
+        cardCropIdentify.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 requestStoragePermission();
@@ -108,8 +121,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_LOCATION_PERMISSION) {
             if (!(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                Toast.makeText(getApplicationContext(), "This application needs read, write, and camera permissions to run. Application now closing.", Toast.LENGTH_LONG).show();
-                finish();
+                txtNoGPS.setVisibility(View.VISIBLE);
+                progressWeather.setVisibility(View.GONE);
+                llWeather.setVisibility(View.GONE);
             } else {
                 displayLocationSettingsRequest(this);
             }
@@ -159,12 +173,17 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 intent.putExtra("chosen", "model.tflite");
                 intent.putExtra("file-path", filePath);
                 startActivity(intent);
+                finish();
             } else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
                 Exception error = result.getError();
                 Log.e("CROP", "onActivityResult: ", error);
             }
-        } else if (requestCode == REQUEST_CHECK_SETTINGS && resultCode == RESULT_OK)
-            showLocation();
+        } else if (requestCode == REQUEST_CHECK_SETTINGS) {
+            if (resultCode == RESULT_OK)
+                showLocation();
+            else
+                txtNoGPS.setVisibility(View.VISIBLE);
+        }
     }
 
     private void displayLocationSettingsRequest(Context context) {
@@ -195,6 +214,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 switch (status.getStatusCode()) {
                     case LocationSettingsStatusCodes.SUCCESS:
                         Log.e(TAG, "All location settings are satisfied.");
+                        progressWeather.setVisibility(View.VISIBLE);
+                        txtNoGPS.setVisibility(View.GONE);
                         showLocation();
                         break;
                     case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
@@ -224,9 +245,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                     double lat = location.getLatitude();
                     double longitude = location.getLongitude();
                     getCurrentData(lat, longitude);
-//                    txtWeatherLocation.setText("Latitude:" + location.getLatitude() + ", Longitude:" + location.getLongitude());
                     Log.e("Location", "Latitude : " + lat + "\nLongitude : " + longitude);
                 } else {
+                    progressWeather.setVisibility(View.VISIBLE);
+                    txtNoGPS.setVisibility(View.GONE);
+                    llWeather.setVisibility(View.GONE);
                     Log.e("LOCATION", "location is null");
                 }
             }
@@ -251,7 +274,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     @Override
     public void onLocationChanged(Location location) {
-
+        if(!showWeather){
+            getCurrentData(location.getLatitude(), location.getLongitude());
+            showWeather = true;
+            Log.e("Change Location", "onLocationChanged: " + location);
+        }
     }
 
     @Override
@@ -282,34 +309,45 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 if (response.code() == 200) {
                     WeatherResponse weatherResponse = response.body();
                     assert weatherResponse != null;
-
-                    String stringBuilder = "Country: " +
-                            weatherResponse.sys.country +
-                            "\n" +
-                            "Temperature: " +
-                            weatherResponse.main.temp +
-                            "\n" +
-                            "Temperature(Min): " +
-                            weatherResponse.main.temp_min +
-                            "\n" +
-                            "Temperature(Max): " +
-                            weatherResponse.main.temp_max +
-                            "\n" +
-                            "Humidity: " +
-                            weatherResponse.main.humidity +
-                            "\n" +
-                            "Pressure: " +
-                            weatherResponse.main.pressure;
-
-                    txtWeatherLocation.setText(stringBuilder);
+                    fillWeatherCard(weatherResponse);
                 }
                 Log.d("API-RESPONSE", response.body().toString());
             }
 
             @Override
             public void onFailure(@NonNull Call<WeatherResponse> call, @NonNull Throwable t) {
-                txtWeatherLocation.setText(t.getMessage());
+                Log.e("Error Api", t.getMessage());
+                progressWeather.setVisibility(View.GONE);
+                txtNoGPS.setVisibility(View.GONE);
+                Toast.makeText(MainActivity.this, "Error fetching weather", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+    private void fillWeatherCard(WeatherResponse wr){
+        ImageView imgIcon = findViewById(R.id.imgWeatherIcon);
+        TextView txtTemp = findViewById(R.id.txtTemp);
+        TextView txtPressure = findViewById(R.id.txtPressure);
+        TextView txtHumidity = findViewById(R.id.txtHumidity);
+        TextView txtLat = findViewById(R.id.txtLatitude);
+        TextView txtLong = findViewById(R.id.txtLongitude);
+        txtTemp.setText(wr.main.temp + "\u2103");
+        txtLat.setText(wr.coord.lat+"");
+        txtLong.setText(wr.coord.lon+"");
+        txtPressure.setText(wr.main.pressure+" hPa");
+        txtHumidity.setText(wr.main.humidity+"%");
+        Picasso.get().load("http://openweathermap.org/img/w/"+wr.weather.get(0).icon+".png").into(imgIcon, new com.squareup.picasso.Callback() {
+            @Override
+            public void onSuccess() {
+                Log.e("Icon", "SUCCESS");
+            }
+
+            @Override
+            public void onError(Exception e) {
+                Log.e("Icon", "FAILURE : " + e.getMessage());
+            }
+        });
+        llWeather.setVisibility(View.VISIBLE);
+        progressWeather.setVisibility(View.GONE);
+        txtNoGPS.setVisibility(View.GONE);
     }
 }

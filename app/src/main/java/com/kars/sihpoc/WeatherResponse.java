@@ -1,7 +1,5 @@
 package com.kars.sihpoc;
 
-import androidx.annotation.NonNull;
-
 import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
