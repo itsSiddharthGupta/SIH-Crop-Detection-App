@@ -1,6 +1,5 @@
 package com.kars.sihpoc;
 
-import android.content.Intent;
 import android.content.res.AssetFileDescriptor;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
@@ -14,7 +13,14 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import org.tensorflow.lite.Interpreter;
 
@@ -73,13 +79,7 @@ public class Classify extends AppCompatActivity {
     // activity elements
     private ImageView selected_image;
     private Button classify_button;
-    private Button back_button;
-    private TextView label1;
-    private TextView label2;
-    private TextView label3;
-    private TextView Confidence1;
-    private TextView Confidence2;
-    private TextView Confidence3;
+    private TextView txtCropName, txtGrowthTime, txtMarketRate, txtRotationCrops, txtYield, txtSoilType;
     private String file_path = null;
 
     // priority queue that will hold the top results from the CNN
@@ -125,14 +125,13 @@ public class Classify extends AppCompatActivity {
 
         setContentView(R.layout.activity_classify);
 
-        // labels that hold top three results of CNN
-        label1 = (TextView) findViewById(R.id.label1);
-        label2 = (TextView) findViewById(R.id.label2);
-        label3 = (TextView) findViewById(R.id.label3);
-        // displays the probabilities of top labels
-        Confidence1 = (TextView) findViewById(R.id.Confidence1);
-        Confidence2 = (TextView) findViewById(R.id.Confidence2);
-        Confidence3 = (TextView) findViewById(R.id.Confidence3);
+        txtCropName = findViewById(R.id.txtCropName);
+        txtGrowthTime = findViewById(R.id.txtGrowthTime);
+        txtMarketRate = findViewById(R.id.txtMarketRate);
+        txtRotationCrops = findViewById(R.id.txtRotationCrops);
+        txtYield = findViewById(R.id.txtYield);
+        txtSoilType = findViewById(R.id.txtSoilType);
+
         // initialize imageView that displays selected image to the user
         selected_image = (ImageView) findViewById(R.id.selected_image);
 
@@ -140,18 +139,6 @@ public class Classify extends AppCompatActivity {
         topLables = new String[RESULTS_TO_SHOW];
         // initialize array to hold top probabilities
         topConfidence = new String[RESULTS_TO_SHOW];
-
-        // allows user to go back to activity to select a different image
-        back_button = (Button) findViewById(R.id.back_button);
-        back_button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent i = new Intent(Classify.this, MainActivity.class);
-                startActivity(i);
-                finish();
-            }
-        });
-
         // classify current dispalyed image
         classify_button = (Button) findViewById(R.id.classify_image);
         classify_button.setOnClickListener(new View.OnClickListener() {
@@ -186,17 +173,17 @@ public class Classify extends AppCompatActivity {
         }
     }
 
-    private void saveImageInFile(Bitmap bm){
+    private void saveImageInFile(Bitmap bm) {
         File file = new File(file_path);
-        if(!file.exists()){
+        if (!file.exists()) {
             Log.e("ERROR", " in file_provicer");
-        }else{
+        } else {
             try {
                 OutputStream os = new FileOutputStream(file);
-                bm.compress(Bitmap.CompressFormat.JPEG,100,os);
+                bm.compress(Bitmap.CompressFormat.JPEG, 100, os);
                 os.flush();
                 os.close();
-            }catch (IOException e){
+            } catch (IOException e) {
                 Log.e("EXCEPTION", e.toString());
             }
         }
@@ -266,14 +253,32 @@ public class Classify extends AppCompatActivity {
         }
 
         // set the corresponding textviews with the results
-        label1.setText("1. " + topLables[2]);
-        label2.setText("2. " + topLables[1]);
-        label3.setText("3. " + topLables[0]);
-        Confidence1.setText(topConfidence[2]);
-        Confidence2.setText(topConfidence[1]);
-        Confidence3.setText(topConfidence[0]);
+        txtCropName.setText(topLables[2]);
+        getAndFillCropDetails(topLables[2]);
     }
 
+    private void getAndFillCropDetails(String cropName){
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
+        DatabaseReference loc = ref.child("Crops").child(cropName);
+        loc.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                CropDetails cropDetails = dataSnapshot.getValue(CropDetails.class);
+                Log.d("Crop-Details", cropDetails.toString());
+                assert cropDetails!=null;
+                txtGrowthTime.setText(cropDetails.getGrowthTime());
+                txtMarketRate.setText(cropDetails.getMarketRate());
+                txtRotationCrops.setText(cropDetails.getRotationCrops());
+                txtYield.setText(cropDetails.getYield());
+                txtSoilType.setText(cropDetails.getSoilType());
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
 
     // resizes bitmap to given dimensions
     public Bitmap getResizedBitmap(Bitmap bm, int newWidth, int newHeight) {

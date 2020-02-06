@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "49658878452",
+    "firebase_url": "https://crop-detection-63ae4.firebaseio.com",
+    "project_id": "crop-detection-63ae4",
+    "storage_bucket": "crop-detection-63ae4.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:49658878452:android:7be7360e28246a89cd01a1",
+        "android_client_info": {
+          "package_name": "com.kars.sihpoc"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "49658878452-mqu8utvrb09gb3gu5ch0pacejc3megp3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kars.sihpoc",
+            "certificate_hash": "fa2fb8afe47a6ff56e2963fea9fe959cbe11ac0f"
+          }
+        },
+        {
+          "client_id": "49658878452-6175n5e5d3t4dfc7r09lmu0rinqs1qj3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB6oWQC6G0s7U3UIlUw9LYBG5Rq0cuCAXs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "49658878452-6175n5e5d3t4dfc7r09lmu0rinqs1qj3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -56,6 +56,48 @@
             </androidx.cardview.widget.CardView>
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
+                android:id="@+id/cardCommunityForum"
+                android:layout_height="120dp"
+                android:layout_margin="20dp"
+                android:elevation="8dp">
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/community_pic"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:layout_margin="10dp"
+                    android:fontFamily="cursive"
+                    android:text="Community Forum"
+                    android:textColor="#fff"
+                    android:textSize="28sp" />
+            </androidx.cardview.widget.CardView>
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:id="@+id/cardBuySell"
+                android:layout_height="120dp"
+                android:layout_margin="20dp"
+                android:elevation="8dp">
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/trade_pic"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:layout_margin="10dp"
+                    android:fontFamily="cursive"
+                    android:text="Buy/Sell Crop"
+                    android:textColor="#fff"
+                    android:textSize="28sp" />
+            </androidx.cardview.widget.CardView>
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
                 android:id="@+id/cardWeather"
                 android:layout_height="120dp"
                 android:layout_margin="20dp"

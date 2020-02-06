@@ -173,7 +173,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 intent.putExtra("chosen", "model.tflite");
                 intent.putExtra("file-path", filePath);
                 startActivity(intent);
-                finish();
+//                finish();
             } else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
                 Exception error = result.getError();
                 Log.e("CROP", "onActivityResult: ", error);
