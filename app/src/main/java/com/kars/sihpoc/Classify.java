@@ -11,6 +11,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -38,6 +39,7 @@ import java.nio.channels.FileChannel;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -67,6 +69,8 @@ public class Classify extends AppCompatActivity {
 
     // selected classifier information received from extras
     private String chosen;
+    private String labelsFile;
+    private boolean isCropDetection;
 
     // input image dimensions for the Inception Model
     private int DIM_IMG_SIZE_X = 4;
@@ -79,8 +83,11 @@ public class Classify extends AppCompatActivity {
     // activity elements
     private ImageView selected_image;
     private Button classify_button;
-    private TextView txtCropName, txtGrowthTime, txtMarketRate, txtRotationCrops, txtYield, txtSoilType;
+    private TextView txtCropName, txtGrowthTime, txtMarketRate, txtRotationCrops, txtYield, txtSoilType, txtDiseaseName, txtDiseaseInfo;
     private String file_path = null;
+
+    private LinearLayout llCropDetection, llDiseaseDetection;
+    private HashMap<String, String> diseaseMap;
 
     // priority queue that will hold the top results from the CNN
     private PriorityQueue<Map.Entry<String, Float>> sortedLabels =
@@ -97,6 +104,8 @@ public class Classify extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         // get all selected classifier data from classifiers
         chosen = (String) getIntent().getStringExtra("chosen");
+        labelsFile = (String) getIntent().getStringExtra("labels");
+        isCropDetection = (boolean) getIntent().getBooleanExtra("cropDetection", true);
 
         // initialize array that holds image data
         intValues = new int[DIM_IMG_SIZE_X * DIM_IMG_SIZE_Y];
@@ -131,6 +140,10 @@ public class Classify extends AppCompatActivity {
         txtRotationCrops = findViewById(R.id.txtRotationCrops);
         txtYield = findViewById(R.id.txtYield);
         txtSoilType = findViewById(R.id.txtSoilType);
+        llCropDetection = findViewById(R.id.llCropDetection);
+        llDiseaseDetection = findViewById(R.id.llDiseaseDetection);
+        txtDiseaseName = findViewById(R.id.txtDiseaseName);
+        txtDiseaseInfo = findViewById(R.id.txtDiseaseInfo);
 
         // initialize imageView that displays selected image to the user
         selected_image = (ImageView) findViewById(R.id.selected_image);
@@ -141,6 +154,22 @@ public class Classify extends AppCompatActivity {
         topConfidence = new String[RESULTS_TO_SHOW];
         // classify current dispalyed image
         classify_button = (Button) findViewById(R.id.classify_image);
+
+        if(isCropDetection) {
+            llCropDetection.setVisibility(View.VISIBLE);
+            classify_button.setText("Detect!");
+        }else {
+            llDiseaseDetection.setVisibility(View.VISIBLE);
+            classify_button.setText("Diagnose!");
+            diseaseMap = new HashMap<>();
+            diseaseMap.put("Brown Spot", "Monitor soil nutrients regularly. Apply required fertilizers. For soils that are low in silicon, apply calcium silicate slag before planting. Use resistant varieties.");
+            diseaseMap.put("Cercospara Leaf Spot", "Genetic Resistance. Susceptible cultivars should not be planted within 100 yards of the previous year's infected crop. Many fungicides are available for managing the disease. However, fungicide resistance management must also be considered and monitored carefully.");
+            diseaseMap.put("Common Rust", "Apply copper sprays or sulphur powders to prevent infection. Avoid wetting the leaves when watering plants. Space your plants properly to encourage good air circulation.");
+            diseaseMap.put("Northern Leaf Blight", "Hybrid selection. Scouting. Scout for symptoms of corn leaf blight when ideal environmental conditions favour disease development, especially during or before pollination. Cultural practices. Crop rotation remains a solid tactic to help diminish disease threats.");
+            diseaseMap.put("Hispa", "Avoid over fertilizing the field. Close plant spacing results in greater leaf densities that can tolerate higher hispa numbers. Leaf tip containing blotch mines should be destroyed.");
+            diseaseMap.put("Leaf Blast", "Plant the least-susceptible varieties and use a broad-spectrum seed treatment. Grow rice in fields where flood levels are easily maintained. Damage from blast can be reduced by keeping soil flooded 2 to 4 inches deep from the time rice plants are 6 to 8 inches tall until draining for harvest.");
+        }
+
         classify_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -224,7 +253,7 @@ public class Classify extends AppCompatActivity {
     private List<String> loadLabelList() throws IOException {
         List<String> labelList = new ArrayList<String>();
         BufferedReader reader =
-                new BufferedReader(new InputStreamReader(this.getAssets().open("croplabels.txt")));
+                new BufferedReader(new InputStreamReader(this.getAssets().open(labelsFile)));
         String line;
         while ((line = reader.readLine()) != null) {
             labelList.add(line);
@@ -252,9 +281,16 @@ public class Classify extends AppCompatActivity {
             topConfidence[i] = String.format("%.0f%%", label.getValue() * 100);
         }
 
-        // set the corresponding textviews with the results
-        txtCropName.setText(topLables[2]);
-        getAndFillCropDetails(topLables[2]);
+        if(isCropDetection) {
+            txtCropName.setText(topLables[2]);
+            getAndFillCropDetails(topLables[2]);
+        }else{
+            txtDiseaseName.setText(topLables[2]);
+            Log.e("LABELS", topLables[2] + " : " + diseaseMap.containsKey(topLables[2]) + " : " + topLables[2]);
+            if(diseaseMap!=null && diseaseMap.containsKey(topLables[2])){
+                txtDiseaseInfo.setText(diseaseMap.get(topLables[2]));
+            }
+        }
     }
 
     private void getAndFillCropDetails(String cropName){

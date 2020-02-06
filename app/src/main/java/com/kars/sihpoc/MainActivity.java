@@ -67,6 +67,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     private String filePath = null;
     private String BaseUrl = "https://api.openweathermap.org/";
     private boolean showWeather = false;
+    //true => crop detection model ; false => disease detection model;
+    private boolean isCropDetection;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,6 +90,14 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         cardCropIdentify.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                isCropDetection = true;
+                requestStoragePermission();
+            }
+        });
+        cardDiseaseIdentify.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                isCropDetection = false;
                 requestStoragePermission();
             }
         });
@@ -170,8 +180,16 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 Uri uriCroppedImage = result.getUri();
                 Intent intent = new Intent(this, Classify.class);
                 intent.putExtra("resID_uri", uriCroppedImage);
-                intent.putExtra("chosen", "model.tflite");
                 intent.putExtra("file-path", filePath);
+                intent.putExtra("cropDetection", isCropDetection);
+                if(isCropDetection) {
+                    intent.putExtra("chosen", "model.tflite");
+                    intent.putExtra("labels", "croplabels.txt");
+                }else{
+
+                    intent.putExtra("chosen", "modelDisease.tflite");
+                    intent.putExtra("labels", "diseaselabels.txt");
+                }
                 startActivity(intent);
 //                finish();
             } else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
