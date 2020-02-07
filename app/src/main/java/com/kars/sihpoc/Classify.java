@@ -168,6 +168,15 @@ public class Classify extends AppCompatActivity {
             diseaseMap.put("Northern Leaf Blight", "Hybrid selection. Scouting. Scout for symptoms of corn leaf blight when ideal environmental conditions favour disease development, especially during or before pollination. Cultural practices. Crop rotation remains a solid tactic to help diminish disease threats.");
             diseaseMap.put("Hispa", "Avoid over fertilizing the field. Close plant spacing results in greater leaf densities that can tolerate higher hispa numbers. Leaf tip containing blotch mines should be destroyed.");
             diseaseMap.put("Leaf Blast", "Plant the least-susceptible varieties and use a broad-spectrum seed treatment. Grow rice in fields where flood levels are easily maintained. Damage from blast can be reduced by keeping soil flooded 2 to 4 inches deep from the time rice plants are 6 to 8 inches tall until draining for harvest.");
+            diseaseMap.put("Yellow Leaf Curl Virus", "The most effective treatments used to control the spread of Yellow Leaf Curl Virus are insecticides and resistant crop varieties, Planting resistant/tolerant lines, crop rotation, and breeding for resistance, production of transgenic tomato plants resistant to Tomato yellow leaf curl virus." );
+            diseaseMap.put("Spider Mites", "lant resistant varieties are available, Monitor field regularly and check underside of leaves, Remove affected leaves, Water your crops regularly to as stressed trees and plants are less tolerant to spider mite damage, Control the use of Insecticides to allow beneficial insects to thrive. ");
+            diseaseMap.put("Sepotoria Leaf Spot","Remove infected leaves immediately, and be sure to wash your hands thoroughly before working with uninfected plants, Consider organic fungi sides containing either copper or potassium bicarbonate, Use Fungonil or Daconi.");
+            diseaseMap.put("Early Bight","Prune or stake plants to improve air circulation and reduce fungal problems, Keep the soil under plants clean and free of garden debris. Add a layer of organic compost to prevent the spores from splashing back up onto vegetation, Drip irrigation and soaker hoses can be used to help keep the foliage dry, apply copper-based fungicides early, two weeks before disease normally appears or when weather forecasts predict a long period of wet weather, Burn or bag infected plant parts. Do NOT compost.");
+            diseaseMap.put("Late Blight","Plant resistant cultivars when available, Remove volunteers from the garden prior to planting and space plants far enough apart to allow for plenty of air circulation, Water in the early morning hours, or use soaker hoses, to give plants time to dry out during the day — avoid overhead irrigation, Destroy all tomato debris after harvest. ");
+            diseaseMap.put("Target Spot","Pay careful attention to air circulation, as target spot of tomato thrives in humid conditions, Grow the plants in full sunlight. Be sure the plants aren’t crowded and that each tomato has plenty of air circulation. Cage or stake tomato plants to keep the plants above the soil, Water tomato plants in the morning so the leaves have time to dry. Water at the base of the plant or use a soaker hose or drip system to keep the leaves dry");
+            diseaseMap.put("Leaf Mold","Management practices for leaf mold include managing humidity, changing the location where tomatoes are grown, selecting resistant or less susceptible varieties, applying fungicides, and removing tomato plant debris after last harvest or incorporating it deeply into the soil, mprove air movement around plants by planting with good spacing between plants, locating rows parallel to the prevalent wind direction in an open area, staking or trellising plants, and pruning excess branches and dead leaves, Provide water to the base of plants rather than using sprinklers that wet leaves.");
+            diseaseMap.put("Bacterial Spot","Use Copper-containing bactericides applied on dry seedlings before transplanting to production fields may be effective. e. The material will kill only those bacteria on the surface of the leaf and not within the leaf tissue. the sprays should be started a few days after emergence, continued at 5- day intervals, applied with equipment that ensures good coverage, and applied on dry plants, Avoid overhead irrigation or rain for 24 hr after application.");
+            diseaseMap.put("Mosaic Virus","The only treatment is prevention. No chemical products are available to cure or protect plants, The best factor in controlling and reducing infection is to practice sanitation, Remove any infected plants, including the roots, Remove Also, discard any plants near those affected,  Gardening tools, pots, and planters need to be sterilized and washed regularly, Steam or commercial disinfectants may also be used for disinfection");
         }
 
         classify_button.setOnClickListener(new View.OnClickListener() {
@@ -180,9 +189,7 @@ public class Classify extends AppCompatActivity {
                 // convert bitmap to byte array
                 convertBitmapToByteBuffer(bitmap);
                 // pass byte data to the graph
-
                 tflite.run(imgData, labelProbArray);
-
                 // display the results
                 printTopKLabels();
             }
@@ -216,6 +223,17 @@ public class Classify extends AppCompatActivity {
                 Log.e("EXCEPTION", e.toString());
             }
         }
+    }
+
+    private void printArray(){
+        String ans = "";
+        for(int i = 0;i<labelProbArray.length;i++){
+            for(int j = 0;j<labelProbArray[0].length;j++){
+                ans += labelProbArray[i][j] + " ";
+            }
+            ans += "\n";
+        }
+        Log.e("Prob Array", ans);
     }
 
     // loads tflite grapg from file
@@ -264,6 +282,7 @@ public class Classify extends AppCompatActivity {
 
     // print the top labels and respective confidences
     private void printTopKLabels() {
+        printArray();
         // add all results to priority queue
         for (int i = 0; i < labelList.size(); ++i) {
             sortedLabels.add(
